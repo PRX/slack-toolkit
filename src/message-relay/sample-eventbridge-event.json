@@ -1,1 +1,6 @@
-{"channel": "#sandbox","username": "nobody","icon_emoji": ":ghost:","text": "Test"}
+{
+  "channel": "#sandbox",
+  "username": "nobody",
+  "icon_emoji": ":ghost:",
+  "text": "Test"
+}
