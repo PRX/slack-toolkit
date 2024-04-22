@@ -1,0 +1,298 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: A collection of utilities that integrate with Slack
+
+Parameters:
+  SlackSigningSecet: { Type: String, NoEcho: true }
+  SlackAccessToken: { Type: String, NoEcho: true }
+  DevOpsSlackUserIds: { Type: String }
+  AwsOrganizationCrossAccountSharingRoleArn: { Type: String }
+  DevOpsCrossAccountAccessRoleName: { Type: String, Default: "PRX-DevOps-CrossAccountAccessRole" }
+
+Resources:
+  SlackSdkLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      Description: node-slack-sdk NPM module
+      ContentUri: lib/node-slack-sdk
+      CompatibleRuntimes:
+        - nodejs18.x
+        - nodejs20.x
+
+  # This is an _organization sink_ custom EventBridge event bus. It's intended
+  # to exist once within an AWS Organization (i.e., in a single region in a
+  # single account).
+  #
+  # Slack data, such as Slack message, from organization are expected to be sent
+  # to this event bus. Generally this is done by creating rules on all default
+  # event buses within the organization, which forward all Slack data to this
+  # bus.
+  #
+  # Any tooling that responds to Slack data can subscribe to the relevant
+  # events on this bus.
+  #
+  # This bus should always be called `Slack-org-sink`, as that is what
+  # the rules on all default buses expect.
+  OrgSinkEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: Slack-org-sink
+  OrgSinkEventBusPolicy:
+    Type: AWS::Events::EventBusPolicy
+    Properties:
+      EventBusName: !Ref OrgSinkEventBus
+      StatementId: AllowEventsToSlackOrgSink
+      Statement:
+        Action: events:PutEvents
+        Condition:
+          StringEquals:
+            aws:ResourceOrgID: ${aws:PrincipalOrgID}
+        Effect: Allow
+        Principal: "*"
+        Resource: !GetAtt OrgSinkEventBus.Arn
+
+  # Receives events off the custom Slack event bus which are fully-formed Slack
+  # message payloads, and sends those messsages to Slack via the Slack API,
+  # using credentials from the PRX DevOps (A01G05GKW0K) Slack app. Does not
+  # create or alter messages in any way.
+  MessageRelayFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/message-relay
+      Description: Relays messages to Slack
+      Environment:
+        Variables:
+          SLACK_SIGNING_SECRET: !Ref SlackSigningSecet
+          SLACK_ACCESS_TOKEN: !Ref SlackAccessToken
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Destination: !Ref MessageRelayFunctionFailureSnsTopic
+            Type: SNS
+        MaximumRetryAttempts: 2
+      Events:
+        OrgSinkEventBus:
+          Properties:
+            EventBusName: !GetAtt OrgSinkEventBus.Name
+            InputPath: $.detail
+            Pattern:
+              detail-type:
+                - Slack Message Relay Message Payload
+          Type: EventBridgeRule
+        PrimarySns:
+          # This is the primary SNS topic use for relaying Slack messages.
+          # Prior to the custom event bus (released in 2024-03), this handled
+          # nearly all Slack messages. As of 2024-04 is still handles some
+          # critical messages that have not been migrated to EventBridge.
+          Properties:
+            Topic: arn:aws:sns:us-east-2:578003269847:prx-devops-slack-app-SlackMessageRelaySnsTopic-14AFJNBAFLSEC
+          Type: SNS
+        LegacySns:
+          # This is an SNS topic that was previously used. It has very little
+          # traffic, but as of 2024-04 it is still in use.
+          Properties:
+            Region: us-east-1
+            Topic: arn:aws:sns:us-east-1:561178107736:infrastructure-notifications-SlackMessageRelaySnsTopic-T55GFH6DAK8W
+          Type: SNS
+      Handler: index.handler
+      Layers:
+        - !Ref SlackSdkLambdaLayer
+      MemorySize: 128
+      Runtime: nodejs20.x
+      Tags:
+        prx:meta:tagging-version: "2021-04-07"
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: Production
+        prx:dev:application: Slack Toolkit
+      Timeout: 8
+  MessageRelayLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${MessageRelayFunction}
+      RetentionInDays: 14
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: Production }
+        - { Key: prx:dev:application, Value: Slack Toolkit }
+  MessageRelayErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ERROR [Slack] Message Relay <prod> INVOCATION ERRORS (${AWS::StackName})
+      AlarmDescription: >-
+        Slack relay function has encountered several invocation errors, which
+        will be retried.
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 120
+      Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: Production }
+        - { Key: prx:dev:application, Value: Slack Toolkit }
+      Threshold: 5
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref MessageRelayFunction
+  MessageRelayFunctionFailureSnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: Production }
+        - { Key: prx:dev:application, Value: Slack Toolkit }
+  MessageRelayFunctionFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ERROR [Slack] Message Relay <prod> INVOCATION FAILURES (${AWS::StackName})
+      AlarmDescription: >-
+        Slack relay function has failed to send some messages, even after
+        retrying several times.
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TopicName
+          Value: !GetAtt MessageRelayFunctionFailureSnsTopic.TopicName
+      EvaluationPeriods: 1
+      MetricName: NumberOfMessagesPublished
+      Namespace: AWS/SNS
+      Period: 60
+      Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: Production }
+        - { Key: prx:dev:application, Value: Slack Toolkit }
+      Threshold: 0
+      TreatMissingData: notBreaching
+
+  #
+  DevopsHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Tags:
+        prx:meta:tagging-version: "2021-04-07"
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: Production
+        prx:dev:application: Slack Toolkit
+  DevopsAppRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: StsPolicy
+          PolicyDocument:
+            Statement:
+              - Action: sts:AssumeRole
+                Effect: Allow
+                Resource:
+                  - arn:aws:iam::*:role/*Oganization-CrossAccountSharingRole
+                  - !Sub arn:aws:iam::*:role/*${DevOpsCrossAccountAccessRoleName}
+            Version: "2012-10-17"
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: Production }
+        - { Key: prx:dev:application, Value: Slack Toolkit }
+  DevopsAppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/devops-app
+      Description: Handles Slack api requests
+      Environment:
+        Variables:
+          SLACK_SIGNING_SECRET: !Ref SlackSigningSecet
+          SLACK_ACCESS_TOKEN: !Ref SlackAccessToken
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
+          AWS_ORGANIZATION_CROSS_ACCOUNT_SHARING_ROLE_ARN: !Ref AwsOrganizationCrossAccountSharingRoleArn
+          DEVOPS_CROSS_ACCOUNT_ACCESS_ROLE_NAME: !Ref DevOpsCrossAccountAccessRoleName
+          DEVOPS_SLACK_USER_IDS: !Ref DevOpsSlackUserIds
+      Events:
+        EventRequest:
+          Properties:
+            ApiId: !Ref DevopsHttpApi
+            Method: post
+            Path: /v1/slack/events
+          Type: HttpApi
+        InteractiveRequest:
+          Properties:
+            ApiId: !Ref DevopsHttpApi
+            Method: post
+            Path: /v1/slack/interactive
+          Type: HttpApi
+      Handler: index.handler
+      Layers:
+        - !Ref SlackSdkLambdaLayer
+      MemorySize: 512
+      Role: !GetAtt DevopsAppRole.Arn
+      Runtime: nodejs18.x
+      Tags:
+        prx:meta:tagging-version: "2021-04-07"
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: Production
+        prx:dev:application: Slack Toolkit
+      Timeout: 8
+  DevopsAppLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${DevopsAppFunction}
+      RetentionInDays: 14
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: Production }
+        - { Key: prx:dev:application, Value: Slack Toolkit }
+  DevopsAppErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ERROR [Slack] DevOps App <prod> INVOCATION ERRORS (${AWS::StackName})
+      AlarmDescription: >-
+        Slack DevOps app has encountered several invocation errors.
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref DevopsAppFunction
+      EvaluationPeriods: 1
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: Production }
+        - { Key: prx:dev:application, Value: Slack Toolkit }
+      Threshold: 0
+      TreatMissingData: notBreaching

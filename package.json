@@ -1,0 +1,41 @@
+{
+  "name": "slack-toolkit",
+  "version": "1.0.0",
+  "description": "A collection of utilities that integrate with Slack",
+  "type": "module",
+  "engines": {
+    "node": ">= 20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PRX/slack-toolkit.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "AGPL-3.0",
+  "private": "true",
+  "bugs": {
+    "url": "https://github.com/PRX/slack-toolkit/issues"
+  },
+  "homepage": "https://github.com/PRX/slack-toolkit#readme",
+  "dependencies": {
+    "@aws-sdk/client-eventbridge": "*",
+    "@slack/web-api": "*"
+  },
+  "devDependencies": {
+    "@slack/events-api": "^3",
+    "@slack/interactive-messages": "^2",
+    "@types/node": "*",
+    "@types/aws-lambda": "*",
+    "eslint": "*",
+    "eslint-config-airbnb-base": "*",
+    "eslint-config-prettier": "*",
+    "eslint-plugin-import": "*",
+    "eslint-plugin-jest": "*",
+    "eslint-plugin-prettier": "*",
+    "jsdoc": "*",
+    "prettier": "*",
+    "typescript": "*",
+    "yarn": "*"
+  }
+}
