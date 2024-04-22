@@ -1,12 +1,12 @@
-const querystring = require('querystring');
-const cfInvalidate = require('./things/cloudfront-invalidations');
-const pipelineExec = require('./things/codepipeline-executions');
-const pipelineTransitions = require('./things/codepipeline-transitions');
-const pipelineApproval = require('./things/codepipeline-approval');
+const querystring = require("querystring");
+const cfInvalidate = require("./things/cloudfront-invalidations/index.js");
+const pipelineExec = require("./things/codepipeline-executions/index.js");
+const pipelineTransitions = require("./things/codepipeline-transitions/index.js");
+const pipelineApproval = require("./things/codepipeline-approval/index.js");
 
-const SLACK_PAYLOAD_TYPE_BLOCK_ACTIONS = 'block_actions';
-const SLACK_PAYLOAD_TYPE_VIEW_SUBMISSION = 'view_submission';
-const SLACK_PAYLOAD_TYPE_VIEW_CLOSED = 'view_closed';
+const SLACK_PAYLOAD_TYPE_BLOCK_ACTIONS = "block_actions";
+const SLACK_PAYLOAD_TYPE_VIEW_SUBMISSION = "view_submission";
+const SLACK_PAYLOAD_TYPE_VIEW_CLOSED = "view_closed";
 
 /**
  * Block action payloads are always disambiguated by action_id`.
@@ -19,13 +19,13 @@ const SLACK_PAYLOAD_TYPE_VIEW_CLOSED = 'view_closed';
 async function handleBlockActionPayload(payload) {
   const actionId = payload.actions[0].action_id;
 
-  if (actionId.startsWith('cloudformation-invalidation_')) {
+  if (actionId.startsWith("cloudformation-invalidation_")) {
     await cfInvalidate.handleBlockActionPayload(payload);
-  } else if (actionId.startsWith('codepipeline-execution_')) {
+  } else if (actionId.startsWith("codepipeline-execution_")) {
     await pipelineExec.handleBlockActionPayload(payload);
-  } else if (actionId.startsWith('codepipeline-transitions_')) {
+  } else if (actionId.startsWith("codepipeline-transitions_")) {
     await pipelineTransitions.handleBlockActionPayload(payload);
-  } else if (actionId.startsWith('codepipeline-approval_')) {
+  } else if (actionId.startsWith("codepipeline-approval_")) {
     await pipelineApproval.handleBlockActionPayload(payload);
   }
 }
@@ -41,13 +41,13 @@ async function handleBlockActionPayload(payload) {
 async function handleViewSubmissionPayload(payload) {
   const callbackId = payload.view.callback_id;
 
-  if (callbackId.startsWith('cloudformation-invalidation_')) {
+  if (callbackId.startsWith("cloudformation-invalidation_")) {
     await cfInvalidate.handleViewSubmissionPayload(payload);
-  } else if (callbackId.startsWith('codepipeline-execution_')) {
+  } else if (callbackId.startsWith("codepipeline-execution_")) {
     await pipelineExec.handleViewSubmissionPayload(payload);
-  } else if (callbackId.startsWith('codepipeline-transitions_')) {
+  } else if (callbackId.startsWith("codepipeline-transitions_")) {
     await pipelineTransitions.handleViewSubmissionPayload(payload);
-  } else if (callbackId.startsWith('codepipeline-approval_')) {
+  } else if (callbackId.startsWith("codepipeline-approval_")) {
     await pipelineApproval.handleViewSubmissionPayload(payload);
   }
 }
@@ -64,15 +64,15 @@ module.exports = {
     switch (payload.type) {
       case SLACK_PAYLOAD_TYPE_BLOCK_ACTIONS:
         await handleBlockActionPayload(payload);
-        return { statusCode: 200, headers: {}, body: '' };
+        return { statusCode: 200, headers: {}, body: "" };
       case SLACK_PAYLOAD_TYPE_VIEW_SUBMISSION:
         await handleViewSubmissionPayload(payload);
-        return { statusCode: 200, headers: {}, body: '' };
+        return { statusCode: 200, headers: {}, body: "" };
       case SLACK_PAYLOAD_TYPE_VIEW_CLOSED:
-        console.log('SLACK_PAYLOAD_TYPE_VIEW_CLOSED');
-        return { statusCode: 200, headers: {}, body: '' };
+        console.log("SLACK_PAYLOAD_TYPE_VIEW_CLOSED");
+        return { statusCode: 200, headers: {}, body: "" };
       default:
-        return { statusCode: 200, headers: {}, body: '' };
+        return { statusCode: 200, headers: {}, body: "" };
     }
   },
 };

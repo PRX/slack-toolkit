@@ -1,6 +1,6 @@
 // const { WebClient } = require('@slack/web-api');
 
-const SlackRequest = require("./slack_request");
+const SlackRequest = require("./slack_request.js");
 
 // eslint-disable-next-line arrow-body-style
 exports.handler = async (event) => {

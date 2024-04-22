@@ -1,7 +1,7 @@
-const AppHome = require('./app-home');
+const AppHome = require("./app-home.js");
 
-const SLACK_PAYLOAD_TYPE_EVENT_CALLBACK = 'event_callback';
-const SLACK_PAYLOAD_TYPE_URL_VERIFICATION = 'url_verification';
+const SLACK_PAYLOAD_TYPE_EVENT_CALLBACK = "event_callback";
+const SLACK_PAYLOAD_TYPE_URL_VERIFICATION = "url_verification";
 
 module.exports = {
   // Handles API payloads coming from the Slack Events API for any events
@@ -13,10 +13,10 @@ module.exports = {
     const payload = JSON.parse(body);
 
     if (payload.type === SLACK_PAYLOAD_TYPE_URL_VERIFICATION) {
-      console.log('Responding to event URL challenge');
+      console.log("Responding to event URL challenge");
       return {
         statusCode: 200,
-        headers: { 'content-type': 'application/json' },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({ challenge: payload.challenge }),
       };
     }
@@ -26,14 +26,14 @@ module.exports = {
       // to. Some discrete subscriptions share a type, e.g., message.im
       // and message.mpim both have a `message` type.
       switch (payload.event.type) {
-        case 'app_home_opened':
+        case "app_home_opened":
           AppHome.handler(payload);
           break;
         default:
-          console.log('Unhandled Event API event type');
+          console.log("Unhandled Event API event type");
       }
     }
 
-    return { statusCode: 200, headers: {}, body: '' };
+    return { statusCode: 200, headers: {}, body: "" };
   },
 };

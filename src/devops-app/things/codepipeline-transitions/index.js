@@ -1,6 +1,6 @@
-const { WebClient } = require('@slack/web-api');
-const { CodePipeline } = require('@aws-sdk/client-codepipeline');
-const Access = require('../../access');
+const { WebClient } = require("@slack/web-api");
+const { CodePipeline } = require("@aws-sdk/client-codepipeline");
+const Access = require("../../access.js");
 
 const web = new WebClient(process.env.SLACK_ACCESS_TOKEN);
 
@@ -10,8 +10,8 @@ async function codePipelineClient(accountId, region) {
   const role = await Access.devopsRole(accountId);
 
   const codepipeline = new CodePipeline({
-    apiVersion: '2019-03-26',
-    region: region,
+    apiVersion: "2019-03-26",
+    region,
     credentials: {
       accessKeyId: role.Credentials.AccessKeyId,
       secretAccessKey: role.Credentials.SecretAccessKey,
@@ -28,35 +28,35 @@ async function openModal(payload) {
   await web.views.open({
     trigger_id: payload.trigger_id,
     view: {
-      type: 'modal',
+      type: "modal",
       clear_on_close: true,
       title: {
-        type: 'plain_text',
-        text: 'CodePipeline Transitions',
+        type: "plain_text",
+        text: "CodePipeline Transitions",
       },
       blocks: [
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
-            text: 'Enable or disable a transition between pipeline stages',
+            type: "mrkdwn",
+            text: "Enable or disable a transition between pipeline stages",
           },
         },
         {
-          type: 'actions',
+          type: "actions",
           elements: [
             {
-              type: 'static_select',
+              type: "static_select",
               placeholder: {
-                type: 'plain_text',
-                text: 'Select AWS account',
+                type: "plain_text",
+                text: "Select AWS account",
               },
-              action_id: 'codepipeline-transitions_select-account',
+              action_id: "codepipeline-transitions_select-account",
               options: accounts.Accounts.sort((a, b) =>
                 a.Name.localeCompare(b.Name),
               ).map((a) => ({
                 text: {
-                  type: 'plain_text',
+                  type: "plain_text",
                   text: a.Name,
                 },
                 value: `${a.Id}`,
@@ -79,41 +79,41 @@ async function accountSelected(payload) {
     view_id: payload.view.id,
     hash: payload.view.hash,
     view: {
-      type: 'modal',
+      type: "modal",
       clear_on_close: true,
       private_metadata: JSON.stringify({ accountId, accountName }),
       title: {
-        type: 'plain_text',
-        text: 'CodePipeline Transitions',
+        type: "plain_text",
+        text: "CodePipeline Transitions",
       },
       blocks: [
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
-            text: 'Enable or disable a transition between pipeline stages',
+            type: "mrkdwn",
+            text: "Enable or disable a transition between pipeline stages",
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Account:* ${accountName}`,
           },
         },
         {
-          type: 'actions',
+          type: "actions",
           elements: [
             {
-              type: 'static_select',
+              type: "static_select",
               placeholder: {
-                type: 'plain_text',
-                text: 'Select AWS region',
+                type: "plain_text",
+                text: "Select AWS region",
               },
-              action_id: 'codepipeline-transitions_select-region',
+              action_id: "codepipeline-transitions_select-region",
               options: Access.regions().map((region) => ({
                 text: {
-                  type: 'plain_text',
+                  type: "plain_text",
                   text: `${region}`.substring(0, 75),
                 },
                 value: region,
@@ -143,48 +143,48 @@ async function regionSelected(payload) {
     view_id: payload.view.id,
     hash: payload.view.hash,
     view: {
-      type: 'modal',
+      type: "modal",
       clear_on_close: true,
       private_metadata: JSON.stringify(privateMetadata),
       title: {
-        type: 'plain_text',
-        text: 'CodePipeline Transitions',
+        type: "plain_text",
+        text: "CodePipeline Transitions",
       },
       blocks: [
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
-            text: 'Enable or disable a transition between pipeline stages',
+            type: "mrkdwn",
+            text: "Enable or disable a transition between pipeline stages",
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Account:* ${accountName}`,
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Region:* ${region}`,
           },
         },
         {
-          type: 'actions',
+          type: "actions",
           elements: [
             {
-              type: 'static_select',
+              type: "static_select",
               placeholder: {
-                type: 'plain_text',
-                text: 'Select CodePipeline pipeline',
+                type: "plain_text",
+                text: "Select CodePipeline pipeline",
               },
-              action_id: 'codepipeline-transitions_select-pipeline',
+              action_id: "codepipeline-transitions_select-pipeline",
               options: pipelines.pipelines.map((p) => ({
                 text: {
-                  type: 'plain_text',
+                  type: "plain_text",
                   text: `${p.name}`.substring(0, 75),
                 },
                 value: p.name,
@@ -216,57 +216,57 @@ async function pipelineSelected(payload) {
     view_id: payload.view.id,
     hash: payload.view.hash,
     view: {
-      type: 'modal',
+      type: "modal",
       clear_on_close: true,
       private_metadata: JSON.stringify(privateMetadata),
       title: {
-        type: 'plain_text',
-        text: 'CodePipeline Transitions',
+        type: "plain_text",
+        text: "CodePipeline Transitions",
       },
       blocks: [
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
-            text: 'Enable or disable a transition between pipeline stages',
+            type: "mrkdwn",
+            text: "Enable or disable a transition between pipeline stages",
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Account:* ${accountName}`,
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Region:* ${region}`,
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Pipeline:* ${pipelineName}`,
           },
         },
         {
-          type: 'actions',
+          type: "actions",
           elements: [
             {
-              type: 'static_select',
+              type: "static_select",
               placeholder: {
-                type: 'plain_text',
-                text: 'Select CodePipeline stage',
+                type: "plain_text",
+                text: "Select CodePipeline stage",
               },
-              action_id: 'codepipeline-transitions_select-stage',
+              action_id: "codepipeline-transitions_select-stage",
               options: pipelineState.stageStates.map((state) => ({
                 text: {
-                  type: 'plain_text',
+                  type: "plain_text",
                   text: `${state.stageName}: ${
-                    state.inboundTransitionState.enabled ? 'On' : 'Disabled'
+                    state.inboundTransitionState.enabled ? "On" : "Disabled"
                   }`.substring(0, 75),
                 },
                 value: state.stageName,
@@ -297,7 +297,7 @@ async function stageSelected(payload) {
   const stageState = pipelineState.stageStates.find(
     (state) => state.stageName === stageName,
   );
-  const inboundTransitionState = stageState.inboundTransitionState;
+  const { inboundTransitionState } = stageState;
 
   privateMetadata.inboundTransitionStateEnabled =
     inboundTransitionState.enabled;
@@ -305,18 +305,18 @@ async function stageSelected(payload) {
   // Only show these when the selected stage is currently ENABLED
   const disableBlocks = [
     {
-      type: 'input',
-      block_id: 'codepipeline-transitions_set-stage-state-reason',
+      type: "input",
+      block_id: "codepipeline-transitions_set-stage-state-reason",
       label: {
-        type: 'plain_text',
-        text: 'Reason for disabling',
+        type: "plain_text",
+        text: "Reason for disabling",
       },
       element: {
-        type: 'plain_text_input',
-        action_id: 'codepipeline-transitions_set-stage-state-reason',
+        type: "plain_text_input",
+        action_id: "codepipeline-transitions_set-stage-state-reason",
         placeholder: {
-          type: 'plain_text',
-          text: 'e.g., Holding for additional QA',
+          type: "plain_text",
+          text: "e.g., Holding for additional QA",
         },
         multiline: true,
       },
@@ -326,9 +326,9 @@ async function stageSelected(payload) {
   // Only show these when the selected stage is currently DISABLED
   const enableBlocks = [
     {
-      type: 'section',
+      type: "section",
       text: {
-        type: 'mrkdwn',
+        type: "mrkdwn",
         text: `*Reason:* ${inboundTransitionState.disabledReason}`,
       },
     },
@@ -338,51 +338,51 @@ async function stageSelected(payload) {
     view_id: payload.view.id,
     hash: payload.view.hash,
     view: {
-      type: 'modal',
-      callback_id: 'codepipeline-transitions_set-stage-state',
+      type: "modal",
+      callback_id: "codepipeline-transitions_set-stage-state",
       clear_on_close: true,
       private_metadata: JSON.stringify(privateMetadata),
       title: {
-        type: 'plain_text',
-        text: 'CodePipeline Executions',
+        type: "plain_text",
+        text: "CodePipeline Executions",
       },
       submit: {
-        type: 'plain_text',
-        text: inboundTransitionState.enabled ? 'Disable' : 'Enable',
+        type: "plain_text",
+        text: inboundTransitionState.enabled ? "Disable" : "Enable",
       },
       blocks: [
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
-            text: 'Enable or disable a transition between pipeline stages',
+            type: "mrkdwn",
+            text: "Enable or disable a transition between pipeline stages",
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Account:* ${accountName}`,
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Region:* ${region}`,
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Pipeline:* ${pipelineName}`,
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Stage:* ${stageName}`,
           },
         },
@@ -405,24 +405,24 @@ async function setTransitionState(payload) {
   const codepipeline = await codePipelineClient(accountId, region);
 
   const msg = {
-    icon_emoji: ':ops-codepipeline:',
-    username: 'AWS CopePipeline via DevOps',
-    channel: '#tech-devops',
-    text: '',
+    icon_emoji: ":ops-codepipeline:",
+    username: "AWS CopePipeline via DevOps",
+    channel: "#tech-devops",
+    text: "",
   };
 
   if (inboundTransitionStateEnabled) {
     // Stage is currently enabled; Disable it
     const { values } = payload.view.state;
-    const block = values['codepipeline-transitions_set-stage-state-reason'];
-    const action = block['codepipeline-transitions_set-stage-state-reason'];
+    const block = values["codepipeline-transitions_set-stage-state-reason"];
+    const action = block["codepipeline-transitions_set-stage-state-reason"];
     const { value } = action;
 
     const reason = value;
     await codepipeline.disableStageTransition({
       pipelineName,
       stageName,
-      transitionType: 'Inbound',
+      transitionType: "Inbound",
       reason,
     });
 
@@ -432,7 +432,7 @@ async function setTransitionState(payload) {
     await codepipeline.enableStageTransition({
       pipelineName,
       stageName,
-      transitionType: 'Inbound',
+      transitionType: "Inbound",
     });
 
     msg.text = `Pipeline stage transition for \`${pipelineName}\`:\`${stageName}\` has been enabled.`;
@@ -446,19 +446,19 @@ module.exports = {
     const actionId = payload.actions[0].action_id;
 
     switch (actionId) {
-      case 'codepipeline-transitions_open-model':
+      case "codepipeline-transitions_open-model":
         await openModal(payload);
         break;
-      case 'codepipeline-transitions_select-account':
+      case "codepipeline-transitions_select-account":
         await accountSelected(payload);
         break;
-      case 'codepipeline-transitions_select-region':
+      case "codepipeline-transitions_select-region":
         await regionSelected(payload);
         break;
-      case 'codepipeline-transitions_select-pipeline':
+      case "codepipeline-transitions_select-pipeline":
         await pipelineSelected(payload);
         break;
-      case 'codepipeline-transitions_select-stage':
+      case "codepipeline-transitions_select-stage":
         await stageSelected(payload);
         break;
       default:
@@ -471,7 +471,7 @@ module.exports = {
     const callbackId = payload.view.callback_id;
 
     switch (callbackId) {
-      case 'codepipeline-transitions_set-stage-state':
+      case "codepipeline-transitions_set-stage-state":
         await setTransitionState(payload);
         break;
       default:

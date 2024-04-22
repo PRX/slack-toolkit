@@ -1,6 +1,6 @@
-const { WebClient } = require('@slack/web-api');
-const { CodePipeline } = require('@aws-sdk/client-codepipeline');
-const Access = require('../../access');
+const { WebClient } = require("@slack/web-api");
+const { CodePipeline } = require("@aws-sdk/client-codepipeline");
+const Access = require("../../access.js");
 
 const web = new WebClient(process.env.SLACK_ACCESS_TOKEN);
 
@@ -18,25 +18,25 @@ module.exports = {
     await web.views.open({
       trigger_id: payload.trigger_id,
       view: {
-        type: 'modal',
-        callback_id: 'codepipeline-approval_reject-deploy',
+        type: "modal",
+        callback_id: "codepipeline-approval_reject-deploy",
         clear_on_close: true,
         private_metadata: JSON.stringify(metadata),
         title: {
-          type: 'plain_text',
-          text: 'Reject Deployment',
+          type: "plain_text",
+          text: "Reject Deployment",
         },
         submit: {
-          type: 'plain_text',
-          text: 'Reject',
+          type: "plain_text",
+          text: "Reject",
         },
         blocks: [
           {
-            type: 'input',
-            block_id: 'codepipeline-approval_reject-deploy-summary',
+            type: "input",
+            block_id: "codepipeline-approval_reject-deploy-summary",
             label: {
-              type: 'plain_text',
-              text: 'Reason',
+              type: "plain_text",
+              text: "Reason",
             },
             // hint: {
             //   type: 'plain_text',
@@ -44,10 +44,10 @@ module.exports = {
             //     'Put each path on its own line. All paths must start with a slash. Paths may include wildcards (*), which must be the last character if included.',
             // },
             element: {
-              type: 'plain_text_input',
-              action_id: 'codepipeline-approval_reject-deploy-summary',
+              type: "plain_text_input",
+              action_id: "codepipeline-approval_reject-deploy-summary",
               placeholder: {
-                type: 'plain_text',
+                type: "plain_text",
                 text: 'e.g., "No op", "Issue discovered in staging"',
               },
               multiline: true,
@@ -67,19 +67,19 @@ module.exports = {
   ) {
     // Get the value from the modal's input block
     const { values } = payload.view.state;
-    const block = values['codepipeline-approval_reject-deploy-summary'];
-    const action = block['codepipeline-approval_reject-deploy-summary'];
+    const block = values["codepipeline-approval_reject-deploy-summary"];
+    const action = block["codepipeline-approval_reject-deploy-summary"];
     const { value } = action;
 
     const approvalParams = JSON.parse(payload.view.private_metadata);
 
-    const pipelineRegion = approvalParams.result.summary.split(',')[0];
-    const pipelineAccountId = approvalParams.result.summary.split(',')[1];
+    const pipelineRegion = approvalParams.result.summary.split(",")[0];
+    const pipelineAccountId = approvalParams.result.summary.split(",")[1];
 
     approvalParams.result.summary = value;
 
-    const channelId = approvalParams.channelId;
-    const messageTs = approvalParams.messageTs;
+    const { channelId } = approvalParams;
+    const { messageTs } = approvalParams;
     delete approvalParams.channelId;
     delete approvalParams.messageTs;
 
@@ -88,7 +88,7 @@ module.exports = {
     const role = await Access.devopsRole(pipelineAccountId);
 
     const codepipeline = new CodePipeline({
-      apiVersion: '2019-03-26',
+      apiVersion: "2019-03-26",
       region: pipelineRegion,
       credentials: {
         accessKeyId: role.Credentials.AccessKeyId,
@@ -113,7 +113,7 @@ module.exports = {
     // These changes are made to the message constructed in the Spire CD
     // pipeline events handler Lambda, where the production approval message is
     // handled
-    msg.attachments[0].color = '#a30200';
+    msg.attachments[0].color = "#a30200";
     msg.attachments[0].blocks.splice(2, 1);
     msg.attachments[0].blocks[1].text.text = `❌ <@${payload.user.id}> rejected this release with the reason:\n> ${value}`;
 

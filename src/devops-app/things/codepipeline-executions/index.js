@@ -1,6 +1,6 @@
-const { WebClient } = require('@slack/web-api');
-const { CodePipeline } = require('@aws-sdk/client-codepipeline');
-const Access = require('../../access');
+const { WebClient } = require("@slack/web-api");
+const { CodePipeline } = require("@aws-sdk/client-codepipeline");
+const Access = require("../../access.js");
 
 const web = new WebClient(process.env.SLACK_ACCESS_TOKEN);
 
@@ -10,8 +10,8 @@ async function codePipelineClient(accountId, region) {
   const role = await Access.devopsRole(accountId);
 
   const codepipeline = new CodePipeline({
-    apiVersion: '2019-03-26',
-    region: region,
+    apiVersion: "2019-03-26",
+    region,
     credentials: {
       accessKeyId: role.Credentials.AccessKeyId,
       secretAccessKey: role.Credentials.SecretAccessKey,
@@ -28,35 +28,35 @@ async function openModal(payload) {
   await web.views.open({
     trigger_id: payload.trigger_id,
     view: {
-      type: 'modal',
+      type: "modal",
       clear_on_close: true,
       title: {
-        type: 'plain_text',
-        text: 'CodePipeline Executions',
+        type: "plain_text",
+        text: "CodePipeline Executions",
       },
       blocks: [
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
-            text: 'Start a pipeline execution in CodePipelines',
+            type: "mrkdwn",
+            text: "Start a pipeline execution in CodePipelines",
           },
         },
         {
-          type: 'actions',
+          type: "actions",
           elements: [
             {
-              type: 'static_select',
+              type: "static_select",
               placeholder: {
-                type: 'plain_text',
-                text: 'Select AWS account',
+                type: "plain_text",
+                text: "Select AWS account",
               },
-              action_id: 'codepipeline-execution_select-account',
+              action_id: "codepipeline-execution_select-account",
               options: accounts.Accounts.sort((a, b) =>
                 a.Name.localeCompare(b.Name),
               ).map((a) => ({
                 text: {
-                  type: 'plain_text',
+                  type: "plain_text",
                   text: a.Name,
                 },
                 value: `${a.Id}`,
@@ -79,41 +79,41 @@ async function accountSelected(payload) {
     view_id: payload.view.id,
     hash: payload.view.hash,
     view: {
-      type: 'modal',
+      type: "modal",
       clear_on_close: true,
       private_metadata: JSON.stringify({ accountId, accountName }),
       title: {
-        type: 'plain_text',
-        text: 'CodePipeline Transitions',
+        type: "plain_text",
+        text: "CodePipeline Transitions",
       },
       blocks: [
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
-            text: 'Start a pipeline execution in CodePipelines',
+            type: "mrkdwn",
+            text: "Start a pipeline execution in CodePipelines",
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Account:* ${accountName}`,
           },
         },
         {
-          type: 'actions',
+          type: "actions",
           elements: [
             {
-              type: 'static_select',
+              type: "static_select",
               placeholder: {
-                type: 'plain_text',
-                text: 'Select AWS region',
+                type: "plain_text",
+                text: "Select AWS region",
               },
-              action_id: 'codepipeline-execution_select-region',
+              action_id: "codepipeline-execution_select-region",
               options: Access.regions().map((region) => ({
                 text: {
-                  type: 'plain_text',
+                  type: "plain_text",
                   text: `${region}`.substring(0, 75),
                 },
                 value: region,
@@ -143,48 +143,48 @@ async function regionSelected(payload) {
     view_id: payload.view.id,
     hash: payload.view.hash,
     view: {
-      type: 'modal',
+      type: "modal",
       clear_on_close: true,
       private_metadata: JSON.stringify(privateMetadata),
       title: {
-        type: 'plain_text',
-        text: 'CodePipeline Executions',
+        type: "plain_text",
+        text: "CodePipeline Executions",
       },
       blocks: [
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
-            text: 'Start a pipeline execution in CodePipelines',
+            type: "mrkdwn",
+            text: "Start a pipeline execution in CodePipelines",
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Account:* ${accountName}`,
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Region:* ${region}`,
           },
         },
         {
-          type: 'actions',
+          type: "actions",
           elements: [
             {
-              type: 'static_select',
+              type: "static_select",
               placeholder: {
-                type: 'plain_text',
-                text: 'Select CodePipeline pipeline',
+                type: "plain_text",
+                text: "Select CodePipeline pipeline",
               },
-              action_id: 'codepipeline-execution_select-pipeline',
+              action_id: "codepipeline-execution_select-pipeline",
               options: pipelines.pipelines.map((p) => ({
                 text: {
-                  type: 'plain_text',
+                  type: "plain_text",
                   text: `${p.name}`.substring(0, 75),
                 },
                 value: p.name,
@@ -211,44 +211,44 @@ async function pipelineSelected(payload) {
     view_id: payload.view.id,
     hash: payload.view.hash,
     view: {
-      type: 'modal',
-      callback_id: 'codepipeline-execution_pipeline-to-start',
+      type: "modal",
+      callback_id: "codepipeline-execution_pipeline-to-start",
       clear_on_close: true,
       private_metadata: JSON.stringify(privateMetadata),
       title: {
-        type: 'plain_text',
-        text: 'CodePipeline Executions',
+        type: "plain_text",
+        text: "CodePipeline Executions",
       },
       submit: {
-        type: 'plain_text',
-        text: 'Start Execution',
+        type: "plain_text",
+        text: "Start Execution",
       },
       blocks: [
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
-            text: 'Start a pipeline execution in CodePipelines',
+            type: "mrkdwn",
+            text: "Start a pipeline execution in CodePipelines",
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Account:* ${accountName}`,
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Region:* ${region}`,
           },
         },
         {
-          type: 'section',
+          type: "section",
           text: {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `*Pipeline:* ${pipelineName}`,
           },
         },
@@ -281,10 +281,10 @@ async function startPipeline(payload) {
   await startPipelineExecution(accountId, region, pipelineName);
 
   await web.chat.postMessage({
-    icon_emoji: ':ops-codepipeline:',
-    username: 'AWS CopePipeline via DevOps',
-    channel: '#tech-devops',
-    text: [`Pipeline execution started for: \`${pipelineName}\``].join('\n'),
+    icon_emoji: ":ops-codepipeline:",
+    username: "AWS CopePipeline via DevOps",
+    channel: "#tech-devops",
+    text: [`Pipeline execution started for: \`${pipelineName}\``].join("\n"),
   });
 }
 
@@ -293,16 +293,16 @@ module.exports = {
     const actionId = payload.actions[0].action_id;
 
     switch (actionId) {
-      case 'codepipeline-execution_open-model':
+      case "codepipeline-execution_open-model":
         await openModal(payload);
         break;
-      case 'codepipeline-execution_select-account':
+      case "codepipeline-execution_select-account":
         await accountSelected(payload);
         break;
-      case 'codepipeline-execution_select-region':
+      case "codepipeline-execution_select-region":
         await regionSelected(payload);
         break;
-      case 'codepipeline-execution_select-pipeline':
+      case "codepipeline-execution_select-pipeline":
         await pipelineSelected(payload);
         break;
       default:
@@ -315,7 +315,7 @@ module.exports = {
     const callbackId = payload.view.callback_id;
 
     switch (callbackId) {
-      case 'codepipeline-execution_pipeline-to-start':
+      case "codepipeline-execution_pipeline-to-start":
         await startPipeline(payload);
         break;
       default:

@@ -1,6 +1,6 @@
-const { WebClient } = require('@slack/web-api');
-const Access = require('../../access');
-const { CodePipeline } = require('@aws-sdk/client-codepipeline');
+const { WebClient } = require("@slack/web-api");
+const { CodePipeline } = require("@aws-sdk/client-codepipeline");
+const Access = require("../../access.js");
 
 const web = new WebClient(process.env.SLACK_ACCESS_TOKEN);
 
@@ -14,17 +14,17 @@ module.exports = {
     const action = payload.actions[0];
     const approvalParams = JSON.parse(action.value);
 
-    const pipelineRegion = approvalParams.result.summary.split(',')[0];
-    const pipelineAccountId = approvalParams.result.summary.split(',')[1];
+    const pipelineRegion = approvalParams.result.summary.split(",")[0];
+    const pipelineAccountId = approvalParams.result.summary.split(",")[1];
 
-    approvalParams.result.summary = 'No details were provided';
+    approvalParams.result.summary = "No details were provided";
 
     // Assume a role in the selected account that has permission to
     // putApprovalResult
     const role = await Access.devopsRole(pipelineAccountId);
 
     const codepipeline = new CodePipeline({
-      apiVersion: '2019-03-26',
+      apiVersion: "2019-03-26",
       region: pipelineRegion,
       credentials: {
         accessKeyId: role.Credentials.AccessKeyId,
@@ -48,7 +48,7 @@ module.exports = {
     // These changes are made to the message constructed in the Spire CD
     // pipeline events handler Lambda, where the production approval message is
     // handled
-    msg.attachments[0].color = '#2eb886';
+    msg.attachments[0].color = "#2eb886";
     msg.attachments[0].blocks.splice(2, 1);
     msg.attachments[0].blocks[1].text.text = `✅ <@${payload.user.id}> approved this release.`;
 
