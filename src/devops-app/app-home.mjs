@@ -1,4 +1,4 @@
-const { WebClient } = require("@slack/web-api");
+import { WebClient } from "@slack/web-api";
 
 async function publishOpsView(userId, hash) {
   const web = new WebClient(process.env.SLACK_ACCESS_TOKEN);
@@ -110,30 +110,28 @@ async function publishDefaultView(userId, hash) {
   });
 }
 
-module.exports = {
-  handler: async function handler(payload) {
-    const userId = payload.event.user;
-    const { tab } = payload.event;
+export async function handler(payload) {
+  const userId = payload.event.user;
+  const { tab } = payload.event;
 
-    console.log("App Home opened");
+  console.log("App Home opened");
 
-    // No-op on messages
-    if (tab === "messages") {
-      console.log("Ignore messages tab");
-      return;
+  // No-op on messages
+  if (tab === "messages") {
+    console.log("Ignore messages tab");
+    return;
+  }
+
+  if (tab === "home") {
+    let hash;
+    if (payload.event.view && payload.event.view.hash) {
+      hash = payload.event.view.hash;
     }
 
-    if (tab === "home") {
-      let hash;
-      if (payload.event.view && payload.event.view.hash) {
-        hash = payload.event.view.hash;
-      }
-
-      if (process.env.DEVOPS_SLACK_USER_IDS.split(",").includes(userId)) {
-        await publishOpsView(userId, hash);
-      } else {
-        await publishDefaultView(userId, hash);
-      }
+    if (process.env.DEVOPS_SLACK_USER_IDS.split(",").includes(userId)) {
+      await publishOpsView(userId, hash);
+    } else {
+      await publishDefaultView(userId, hash);
     }
-  },
-};
+  }
+}

@@ -1,11 +1,11 @@
-const { WebClient } = require("@slack/web-api");
-const { CloudFront } = require("@aws-sdk/client-cloudfront");
-const Access = require("../../access.js");
+import { WebClient } from "@slack/web-api";
+import { CloudFront } from "@aws-sdk/client-cloudfront";
+import { orgAccounts, devopsRole } from "../../access.mjs";
 
 const web = new WebClient(process.env.SLACK_ACCESS_TOKEN);
 
 async function openModal(payload) {
-  const accounts = await Access.orgAccounts();
+  const accounts = await orgAccounts();
 
   await web.views.open({
     trigger_id: payload.trigger_id,
@@ -59,7 +59,7 @@ async function selectAccount(payload) {
 
   // Assume a role in the selected account that has permission to
   // listDistributions
-  const role = await Access.devopsRole(accountId);
+  const role = await devopsRole(accountId);
 
   const cloudfront = new CloudFront({
     apiVersion: "2019-03-26",
@@ -211,7 +211,7 @@ async function selectDistribution(payload) {
 async function createInvalidation(accountId, distributionId, paths) {
   // Assume a role in the selected account that has permission to
   // createInvalidation
-  const role = await Access.devopsRole(accountId);
+  const role = await devopsRole(accountId);
 
   const cloudfront = new CloudFront({
     apiVersion: "2019-03-26",
@@ -260,35 +260,32 @@ async function submitPaths(payload) {
   });
 }
 
-module.exports = {
-  handleBlockActionPayload: async function handleBlockActionPayload(payload) {
-    const actionId = payload.actions[0].action_id;
+export async function handleBlockActionPayload(payload) {
+  const actionId = payload.actions[0].action_id;
 
-    switch (actionId) {
-      case "cloudformation-invalidation_open-model":
-        await openModal(payload);
-        break;
-      case "cloudformation-invalidation_select-account":
-        await selectAccount(payload);
-        break;
-      case "cloudformation-invalidation_select-distribution":
-        await selectDistribution(payload);
-        break;
-      default:
-        break;
-    }
-  },
-  handleViewSubmissionPayload: async function handleViewSubmissionPayload(
-    payload,
-  ) {
-    const callbackId = payload.view.callback_id;
+  switch (actionId) {
+    case "cloudformation-invalidation_open-model":
+      await openModal(payload);
+      break;
+    case "cloudformation-invalidation_select-account":
+      await selectAccount(payload);
+      break;
+    case "cloudformation-invalidation_select-distribution":
+      await selectDistribution(payload);
+      break;
+    default:
+      break;
+  }
+}
 
-    switch (callbackId) {
-      case "cloudformation-invalidation_paths-to-invalidate":
-        await submitPaths(payload);
-        break;
-      default:
-        break;
-    }
-  },
-};
+export async function handleViewSubmissionPayload(payload) {
+  const callbackId = payload.view.callback_id;
+
+  switch (callbackId) {
+    case "cloudformation-invalidation_paths-to-invalidate":
+      await submitPaths(payload);
+      break;
+    default:
+      break;
+  }
+}

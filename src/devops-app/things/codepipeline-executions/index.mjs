@@ -1,15 +1,19 @@
-const { WebClient } = require("@slack/web-api");
-const { CodePipeline } = require("@aws-sdk/client-codepipeline");
-const Access = require("../../access.js");
+import { WebClient } from "@slack/web-api";
+import {
+  CodePipelineClient,
+  ListPipelinesCommand,
+  StartPipelineExecutionCommand,
+} from "@aws-sdk/client-codepipeline";
+import { devopsRole, orgAccounts, regions } from "../../access.mjs";
 
 const web = new WebClient(process.env.SLACK_ACCESS_TOKEN);
 
 async function codePipelineClient(accountId, region) {
   // Assume a role in the selected account that has permission to
   // listDistributions
-  const role = await Access.devopsRole(accountId);
+  const role = await devopsRole(accountId);
 
-  const codepipeline = new CodePipeline({
+  const codepipeline = new CodePipelineClient({
     apiVersion: "2019-03-26",
     region,
     credentials: {
@@ -23,7 +27,7 @@ async function codePipelineClient(accountId, region) {
 }
 
 async function openModal(payload) {
-  const accounts = await Access.orgAccounts();
+  const accounts = await orgAccounts();
 
   await web.views.open({
     trigger_id: payload.trigger_id,
@@ -111,7 +115,7 @@ async function accountSelected(payload) {
                 text: "Select AWS region",
               },
               action_id: "codepipeline-execution_select-region",
-              options: Access.regions().map((region) => ({
+              options: regions().map((region) => ({
                 text: {
                   type: "plain_text",
                   text: `${region}`.substring(0, 75),
@@ -137,7 +141,7 @@ async function regionSelected(payload) {
   const { accountId, accountName } = privateMetadata;
 
   const codepipeline = await codePipelineClient(accountId, region);
-  const pipelines = await codepipeline.listPipelines({});
+  const pipelines = await codepipeline.send(new ListPipelinesCommand({}));
 
   await web.views.update({
     view_id: payload.view.id,
@@ -264,9 +268,11 @@ async function pipelineSelected(payload) {
  */
 async function startPipelineExecution(accountId, region, pipelineName) {
   const codepipeline = await codePipelineClient(accountId, region);
-  await codepipeline.startPipelineExecution({
-    name: pipelineName,
-  });
+  await codepipeline.send(
+    new StartPipelineExecutionCommand({
+      name: pipelineName,
+    }),
+  );
 }
 
 async function startPipeline(payload) {
@@ -288,38 +294,35 @@ async function startPipeline(payload) {
   });
 }
 
-module.exports = {
-  handleBlockActionPayload: async function handleBlockActionPayload(payload) {
-    const actionId = payload.actions[0].action_id;
+export async function handleBlockActionPayload(payload) {
+  const actionId = payload.actions[0].action_id;
 
-    switch (actionId) {
-      case "codepipeline-execution_open-model":
-        await openModal(payload);
-        break;
-      case "codepipeline-execution_select-account":
-        await accountSelected(payload);
-        break;
-      case "codepipeline-execution_select-region":
-        await regionSelected(payload);
-        break;
-      case "codepipeline-execution_select-pipeline":
-        await pipelineSelected(payload);
-        break;
-      default:
-        break;
-    }
-  },
-  handleViewSubmissionPayload: async function handleViewSubmissionPayload(
-    payload,
-  ) {
-    const callbackId = payload.view.callback_id;
+  switch (actionId) {
+    case "codepipeline-execution_open-model":
+      await openModal(payload);
+      break;
+    case "codepipeline-execution_select-account":
+      await accountSelected(payload);
+      break;
+    case "codepipeline-execution_select-region":
+      await regionSelected(payload);
+      break;
+    case "codepipeline-execution_select-pipeline":
+      await pipelineSelected(payload);
+      break;
+    default:
+      break;
+  }
+}
 
-    switch (callbackId) {
-      case "codepipeline-execution_pipeline-to-start":
-        await startPipeline(payload);
-        break;
-      default:
-        break;
-    }
-  },
-};
+export async function handleViewSubmissionPayload(payload) {
+  const callbackId = payload.view.callback_id;
+
+  switch (callbackId) {
+    case "codepipeline-execution_pipeline-to-start":
+      await startPipeline(payload);
+      break;
+    default:
+      break;
+  }
+}

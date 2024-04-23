@@ -7,8 +7,8 @@ Parameters:
   SlackSigningSecet: { Type: String, NoEcho: true }
   SlackAccessToken: { Type: String, NoEcho: true }
   DevOpsSlackUserIds: { Type: String }
-  AwsOrganizationCrossAccountSharingRoleArn: { Type: String }
-  DevOpsCrossAccountAccessRoleName: { Type: String, Default: "PRX-DevOps-CrossAccountAccessRole" }
+  AwsOrganizationCrossAccountSharingRoleArn: { Type: String, Default: PRX-Organization-CrossAccountSharingRole }
+  DevOpsCrossAccountAccessRoleName: { Type: String, Default: PRX-DevOps-CrossAccountAccessRole }
 
 Resources:
   SlackSdkLambdaLayer:
@@ -252,7 +252,7 @@ Resources:
         - !Ref SlackSdkLambdaLayer
       MemorySize: 512
       Role: !GetAtt DevopsAppRole.Arn
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName

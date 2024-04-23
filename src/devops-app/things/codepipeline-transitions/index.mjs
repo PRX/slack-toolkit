@@ -1,15 +1,21 @@
-const { WebClient } = require("@slack/web-api");
-const { CodePipeline } = require("@aws-sdk/client-codepipeline");
-const Access = require("../../access.js");
+import { WebClient } from "@slack/web-api";
+import {
+  CodePipelineClient,
+  ListPipelinesCommand,
+  GetPipelineStateCommand,
+  DisableStageTransitionCommand,
+  EnableStageTransitionCommand,
+} from "@aws-sdk/client-codepipeline";
+import { devopsRole, orgAccounts, regions } from "../../access.mjs";
 
 const web = new WebClient(process.env.SLACK_ACCESS_TOKEN);
 
 async function codePipelineClient(accountId, region) {
   // Assume a role in the selected account that has permission to
   // listDistributions
-  const role = await Access.devopsRole(accountId);
+  const role = await devopsRole(accountId);
 
-  const codepipeline = new CodePipeline({
+  const codepipeline = new CodePipelineClient({
     apiVersion: "2019-03-26",
     region,
     credentials: {
@@ -23,7 +29,7 @@ async function codePipelineClient(accountId, region) {
 }
 
 async function openModal(payload) {
-  const accounts = await Access.orgAccounts();
+  const accounts = await orgAccounts();
 
   await web.views.open({
     trigger_id: payload.trigger_id,
@@ -111,7 +117,7 @@ async function accountSelected(payload) {
                 text: "Select AWS region",
               },
               action_id: "codepipeline-transitions_select-region",
-              options: Access.regions().map((region) => ({
+              options: regions().map((region) => ({
                 text: {
                   type: "plain_text",
                   text: `${region}`.substring(0, 75),
@@ -137,7 +143,7 @@ async function regionSelected(payload) {
   const { accountId, accountName } = privateMetadata;
 
   const codepipeline = await codePipelineClient(accountId, region);
-  const pipelines = await codepipeline.listPipelines({});
+  const pipelines = await codepipeline.send(new ListPipelinesCommand({}));
 
   await web.views.update({
     view_id: payload.view.id,
@@ -208,9 +214,11 @@ async function pipelineSelected(payload) {
   const { accountId, accountName, region } = privateMetadata;
 
   const codepipeline = await codePipelineClient(accountId, region);
-  const pipelineState = await codepipeline.getPipelineState({
-    name: pipelineName,
-  });
+  const pipelineState = await codepipeline.send(
+    new GetPipelineStateCommand({
+      name: pipelineName,
+    }),
+  );
 
   await web.views.update({
     view_id: payload.view.id,
@@ -290,9 +298,11 @@ async function stageSelected(payload) {
   const { accountId, accountName, region, pipelineName } = privateMetadata;
 
   const codepipeline = await codePipelineClient(accountId, region);
-  const pipelineState = await codepipeline.getPipelineState({
-    name: pipelineName,
-  });
+  const pipelineState = await codepipeline.send(
+    new GetPipelineStateCommand({
+      name: pipelineName,
+    }),
+  );
 
   const stageState = pipelineState.stageStates.find(
     (state) => state.stageName === stageName,
@@ -419,21 +429,25 @@ async function setTransitionState(payload) {
     const { value } = action;
 
     const reason = value;
-    await codepipeline.disableStageTransition({
-      pipelineName,
-      stageName,
-      transitionType: "Inbound",
-      reason,
-    });
+    await codepipeline.send(
+      new DisableStageTransitionCommand({
+        pipelineName,
+        stageName,
+        transitionType: "Inbound",
+        reason,
+      }),
+    );
 
     msg.text = `Pipeline stage transition for \`${pipelineName}\`:\`${stageName}\` has been disabled.\n> ${reason}`;
   } else {
     // Stage is currently enabled; Enable it
-    await codepipeline.enableStageTransition({
-      pipelineName,
-      stageName,
-      transitionType: "Inbound",
-    });
+    await codepipeline.send(
+      new EnableStageTransitionCommand({
+        pipelineName,
+        stageName,
+        transitionType: "Inbound",
+      }),
+    );
 
     msg.text = `Pipeline stage transition for \`${pipelineName}\`:\`${stageName}\` has been enabled.`;
   }
@@ -441,41 +455,38 @@ async function setTransitionState(payload) {
   await web.chat.postMessage(msg);
 }
 
-module.exports = {
-  handleBlockActionPayload: async function handleBlockActionPayload(payload) {
-    const actionId = payload.actions[0].action_id;
+export async function handleBlockActionPayload(payload) {
+  const actionId = payload.actions[0].action_id;
 
-    switch (actionId) {
-      case "codepipeline-transitions_open-model":
-        await openModal(payload);
-        break;
-      case "codepipeline-transitions_select-account":
-        await accountSelected(payload);
-        break;
-      case "codepipeline-transitions_select-region":
-        await regionSelected(payload);
-        break;
-      case "codepipeline-transitions_select-pipeline":
-        await pipelineSelected(payload);
-        break;
-      case "codepipeline-transitions_select-stage":
-        await stageSelected(payload);
-        break;
-      default:
-        break;
-    }
-  },
-  handleViewSubmissionPayload: async function handleViewSubmissionPayload(
-    payload,
-  ) {
-    const callbackId = payload.view.callback_id;
+  switch (actionId) {
+    case "codepipeline-transitions_open-model":
+      await openModal(payload);
+      break;
+    case "codepipeline-transitions_select-account":
+      await accountSelected(payload);
+      break;
+    case "codepipeline-transitions_select-region":
+      await regionSelected(payload);
+      break;
+    case "codepipeline-transitions_select-pipeline":
+      await pipelineSelected(payload);
+      break;
+    case "codepipeline-transitions_select-stage":
+      await stageSelected(payload);
+      break;
+    default:
+      break;
+  }
+}
 
-    switch (callbackId) {
-      case "codepipeline-transitions_set-stage-state":
-        await setTransitionState(payload);
-        break;
-      default:
-        break;
-    }
-  },
-};
+export async function handleViewSubmissionPayload(payload) {
+  const callbackId = payload.view.callback_id;
+
+  switch (callbackId) {
+    case "codepipeline-transitions_set-stage-state":
+      await setTransitionState(payload);
+      break;
+    default:
+      break;
+  }
+}
