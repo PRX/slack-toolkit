@@ -19,9 +19,11 @@ Resources:
       BuildMethod: makefile
     Properties:
       Description: node-slack-sdk NPM module
-      ContentUri: lib/node-slack-sdk
+      CompatibleArchitectures:
+        - arm64
       CompatibleRuntimes:
         - nodejs22.x
+      ContentUri: lib/node-slack-sdk
 
   # This is an _organization sink_ custom EventBridge event bus. It's intended
   # to exist once within an AWS Organization (i.e., in a single region in a
@@ -62,6 +64,7 @@ Resources:
   MessageRelayFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Architectures: [arm64]
       CodeUri: src/message-relay
       Description: Relays messages to Slack
       Environment:
@@ -223,6 +226,7 @@ Resources:
   DevopsAppFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Architectures: [arm64]
       CodeUri: src/devops-app
       Description: Handles Slack api requests
       Environment:
