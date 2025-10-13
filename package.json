@@ -33,7 +33,6 @@
     "@types/node": "*",
     "@types/aws-lambda": "*",
     "jsdoc": "*",
-    "prettier": "*",
     "typescript": "*",
     "yarn": "*"
   }
