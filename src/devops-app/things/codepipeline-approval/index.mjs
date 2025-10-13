@@ -1,12 +1,12 @@
 import {
-  handleBlockActionPayload as rejectBlock,
-  handleViewSubmissionPayload as rejectView,
-} from "./reject.mjs";
-import { handleBlockActionPayload as approveBlock } from "./approve.mjs";
-import {
   handleBlockActionPayload as annotateBlock,
   handleViewSubmissionPayload as annotateView,
 } from "./annotate.mjs";
+import { handleBlockActionPayload as approveBlock } from "./approve.mjs";
+import {
+  handleBlockActionPayload as rejectBlock,
+  handleViewSubmissionPayload as rejectView,
+} from "./reject.mjs";
 
 export async function handleBlockActionPayload(payload) {
   const actionId = payload.actions[0].action_id;

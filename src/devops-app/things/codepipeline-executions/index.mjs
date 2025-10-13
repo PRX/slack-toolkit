@@ -1,9 +1,9 @@
-import { WebClient } from "@slack/web-api";
 import {
   CodePipelineClient,
   ListPipelinesCommand,
   StartPipelineExecutionCommand,
 } from "@aws-sdk/client-codepipeline";
+import { WebClient } from "@slack/web-api";
 import { devopsRole, orgAccounts, regions } from "../../access.mjs";
 
 const web = new WebClient(process.env.SLACK_ACCESS_TOKEN);

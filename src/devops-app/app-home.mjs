@@ -124,7 +124,7 @@ export async function handler(payload) {
 
   if (tab === "home") {
     let hash;
-    if (payload.event.view && payload.event.view.hash) {
+    if (payload.event.view?.hash) {
       hash = payload.event.view.hash;
     }
 

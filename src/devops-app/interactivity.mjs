@@ -4,6 +4,10 @@ import {
   handleViewSubmissionPayload as cfInvalidateHandleViewSubmissionPayload,
 } from "./things/cloudfront-invalidations/index.mjs";
 import {
+  handleBlockActionPayload as pipelineApprovalHandleBlockActionPayload,
+  handleViewSubmissionPayload as pipelineApprovalHandleViewSubmissionPayload,
+} from "./things/codepipeline-approval/index.mjs";
+import {
   handleBlockActionPayload as pipelineExecHandleBlockActionPayload,
   handleViewSubmissionPayload as pipelineExecHandleViewSubmissionPayload,
 } from "./things/codepipeline-executions/index.mjs";
@@ -11,10 +15,6 @@ import {
   handleBlockActionPayload as pipelineTransitionsHandleBlockActionPayload,
   handleViewSubmissionPayload as pipelineTransitionsHandleViewSubmissionPayload,
 } from "./things/codepipeline-transitions/index.mjs";
-import {
-  handleBlockActionPayload as pipelineApprovalHandleBlockActionPayload,
-  handleViewSubmissionPayload as pipelineApprovalHandleViewSubmissionPayload,
-} from "./things/codepipeline-approval/index.mjs";
 
 const SLACK_PAYLOAD_TYPE_BLOCK_ACTIONS = "block_actions";
 const SLACK_PAYLOAD_TYPE_VIEW_SUBMISSION = "view_submission";
@@ -66,10 +66,10 @@ async function handleViewSubmissionPayload(payload) {
 
 // https://api.slack.com/reference/interaction-payloads/views
 // https://api.slack.com/reference/interaction-payloads/block-actions
-export async function handler(event, body) {
+export async function handler(_event, body) {
   const formdata = parse(body);
   // TODO
-  // @ts-ignore
+  // @ts-expect-error
   const payload = JSON.parse(formdata.payload);
 
   switch (payload.type) {

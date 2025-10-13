@@ -1,5 +1,5 @@
-import { WebClient } from "@slack/web-api";
 import { CodePipeline } from "@aws-sdk/client-codepipeline";
+import { WebClient } from "@slack/web-api";
 import { devopsRole } from "../../access.mjs";
 
 const web = new WebClient(process.env.SLACK_ACCESS_TOKEN);
@@ -54,7 +54,7 @@ export async function handleBlockActionPayload(payload) {
   await web.chat.update({
     channel: payload.channel.id,
     ts: payload.message.ts,
-    // @ts-ignore
+    // @ts-expect-error
     attachments: msg.attachments,
   });
 }

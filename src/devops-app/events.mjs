@@ -8,7 +8,7 @@ const SLACK_PAYLOAD_TYPE_URL_VERIFICATION = "url_verification";
 // https://api.slack.com/events-api#event_types
 // https://api.slack.com/events
 // https://api.slack.com/events-api#receiving_events
-export async function handler(event, body) {
+export async function handler(_event, body) {
   const payload = JSON.parse(body);
 
   if (payload.type === SLACK_PAYLOAD_TYPE_URL_VERIFICATION) {

@@ -1,6 +1,6 @@
-import { WebClient } from "@slack/web-api";
 import { CloudFront } from "@aws-sdk/client-cloudfront";
-import { orgAccounts, devopsRole } from "../../access.mjs";
+import { WebClient } from "@slack/web-api";
+import { devopsRole, orgAccounts } from "../../access.mjs";
 
 const web = new WebClient(process.env.SLACK_ACCESS_TOKEN);
 
@@ -226,7 +226,7 @@ async function createInvalidation(accountId, distributionId, paths) {
   await cloudfront.createInvalidation({
     DistributionId: distributionId,
     InvalidationBatch: {
-      CallerReference: `${+new Date()}`,
+      CallerReference: `${Date.now()}`,
       Paths: {
         Quantity: paths.length,
         Items: paths,

@@ -1,11 +1,11 @@
 /** @typedef {import('@aws-sdk/client-organizations').ListAccountsResponse} ListAccountsResponse */
 /** @typedef {import('@aws-sdk/client-sts').AssumeRoleResponse} AssumeRoleResponse */
 
-import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
 import {
-  OrganizationsClient,
   ListAccountsCommand,
+  OrganizationsClient,
 } from "@aws-sdk/client-organizations";
+import { AssumeRoleCommand, STSClient } from "@aws-sdk/client-sts";
 
 const sts = new STSClient({ apiVersion: "2011-06-15" });
 

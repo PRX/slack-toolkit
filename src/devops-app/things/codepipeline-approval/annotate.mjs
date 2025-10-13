@@ -1,5 +1,5 @@
-import { WebClient } from "@slack/web-api";
 import { CodePipeline } from "@aws-sdk/client-codepipeline";
+import { WebClient } from "@slack/web-api";
 import { devopsRole } from "../../access.mjs";
 
 const web = new WebClient(process.env.SLACK_ACCESS_TOKEN);
@@ -133,7 +133,7 @@ export async function handleViewSubmissionPayload(payload) {
   await web.chat.update({
     channel: channelId,
     ts: messageTs,
-    // @ts-ignore
+    // @ts-expect-error
     attachments: msg.attachments,
   });
 
