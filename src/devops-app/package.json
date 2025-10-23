@@ -1,0 +1,11 @@
+{
+  "name": "devops-app",
+  "version": "0.0.1",
+  "dependencies": {
+    "@aws-sdk/client-eventbridge": "*",
+    "@aws-sdk/client-organizations": "*",
+    "@aws-sdk/client-cloudfront": "*",
+    "@aws-sdk/client-codepipeline": "*",
+    "@aws-sdk/client-sts": "*"
+  }
+}
