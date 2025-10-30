@@ -218,7 +218,7 @@ Resources:
               - Action: sts:AssumeRole
                 Effect: Allow
                 Resource:
-                  - arn:aws:iam::*:role/*Oganization-CrossAccountSharingRole
+                  - arn:aws:iam::*:role/*Organization-CrossAccountSharingRole
                   - !Sub arn:aws:iam::*:role/*${DevOpsCrossAccountAccessRoleName}
             Version: "2012-10-17"
       Tags:
