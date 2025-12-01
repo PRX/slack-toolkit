@@ -26,7 +26,7 @@ Resources:
       CompatibleArchitectures:
         - arm64
       CompatibleRuntimes:
-        - nodejs22.x
+        - nodejs24.x
       ContentUri: lib/node-slack-sdk
 
   # This is an _organization sink_ custom EventBridge event bus. It's intended
@@ -110,7 +110,7 @@ Resources:
       Layers:
         - !Ref SlackSdkLambdaLayer
       MemorySize: 128
-      Runtime: nodejs22.x
+      Runtime: nodejs24.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -259,7 +259,7 @@ Resources:
         - !Ref SlackSdkLambdaLayer
       MemorySize: 512
       Role: !GetAtt DevopsAppRole.Arn
-      Runtime: nodejs22.x
+      Runtime: nodejs24.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
