@@ -81,7 +81,7 @@ async function generateRecordAsync(payload) {
     icon_emoji: ":ops-acm:",
     username: "AWS Certificate Manager via DevOps",
     channel: payload.user.id,
-    text: `Generating records for \`${value}\`, please wait…`,
+    text: `Requesting feed validation record for \`${value}\`. This can take about 10 seconds…`,
   });
 }
 
@@ -125,7 +125,12 @@ export async function generateRecord(DomainName, userId) {
     icon_emoji: ":ops-acm:",
     username: "AWS Certificate Manager via DevOps",
     channel: userId,
-    text: `DNS records for \`${DomainName}\`:\n> \`${record.Name}\` ${record.Type} \`${record.Value}\`.`,
+    text: [
+      `Validation record for \`${DomainName}\`:`,
+      `> \`${record.Name}\``,
+      `> \`${record.Type}\``,
+      `> \`${record.Value}\``,
+    ].join("\n"),
   });
 
   await acm.send(
