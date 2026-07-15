@@ -1,5 +1,9 @@
 import { parse } from "node:querystring";
 import {
+  handleBlockActionPayload as acmValidationHandleBlockActionPayload,
+  handleViewSubmissionPayload as acmValidationHandleViewSubmissionPayload,
+} from "./things/acm-feed-validation-generator/index.mjs";
+import {
   handleBlockActionPayload as cfInvalidateHandleBlockActionPayload,
   handleViewSubmissionPayload as cfInvalidateHandleViewSubmissionPayload,
 } from "./things/cloudfront-invalidations/index.mjs";
@@ -39,6 +43,8 @@ async function handleBlockActionPayload(payload) {
     await pipelineTransitionsHandleBlockActionPayload(payload);
   } else if (actionId.startsWith("codepipeline-approval_")) {
     await pipelineApprovalHandleBlockActionPayload(payload);
+  } else if (actionId.startsWith("acm-feed-validation-generator_")) {
+    await acmValidationHandleBlockActionPayload(payload);
   }
 }
 
@@ -61,6 +67,8 @@ async function handleViewSubmissionPayload(payload) {
     await pipelineTransitionsHandleViewSubmissionPayload(payload);
   } else if (callbackId.startsWith("codepipeline-approval_")) {
     await pipelineApprovalHandleViewSubmissionPayload(payload);
+  } else if (callbackId.startsWith("acm-feed-validation-generator_")) {
+    await acmValidationHandleViewSubmissionPayload(payload);
   }
 }
 

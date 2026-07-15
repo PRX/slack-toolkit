@@ -266,7 +266,18 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
         prx:ops:environment: Production
         prx:dev:application: Slack Toolkit
-      Timeout: 8
+      Timeout: 30
+  DevopsAppRoleSelfInvokePolicy:
+    Type: AWS::IAM::RolePolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: lambda:InvokeFunction
+            Effect: Allow
+            Resource: !GetAtt DevopsAppFunction.Arn
+      PolicyName: SelfInvoke
+      RoleName: !Ref DevopsAppRole
   DevopsAppLogGroup:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: Delete

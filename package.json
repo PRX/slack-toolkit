@@ -19,10 +19,12 @@
   },
   "homepage": "https://github.com/PRX/slack-toolkit#readme",
   "dependencies": {
+    "@aws-sdk/client-acm": "*",
     "@aws-sdk/client-eventbridge": "*",
     "@aws-sdk/client-organizations": "*",
     "@aws-sdk/client-cloudfront": "*",
     "@aws-sdk/client-codepipeline": "*",
+    "@aws-sdk/client-lambda": "*",
     "@aws-sdk/client-sts": "*",
     "@slack/web-api": "*"
   },
